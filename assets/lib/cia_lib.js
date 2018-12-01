@@ -9,7 +9,8 @@ let host = window.location.protocol + "//" + window.location.host + "/";
 * ***Setting Base Url:
     For Example: host+'test_crud/'
 */
-let baseUrl = host+"ci_test/";
+let baseUrl = host+"cia_test/";
+console.log(baseUrl);
 
 //After the Insert, Update, Delete and Read operation refresh a certain area of the page
 let reloadArea = '';
@@ -1173,14 +1174,10 @@ window.onload = function() {
                 allColumns.push({"visible": true, "searchable": false, "orderable": false});
             }
             else
-            {
                 allColumns.push(null);
-            }
         }
         else
-        {
             allColumns.push(null);
-        }
     }
 
     // destroy if have initialized an old datatable
@@ -1190,9 +1187,9 @@ window.onload = function() {
     $('.cia_datatable').DataTable({
         //"processing": true,  // show loader
         "serverSide": true,  // enable ajax
-        "pageLength": 10,    // 10 records shown
+        "pageLength": 5,    // 5 records shown
         "bDestroy": true,   // reinitialize datatable
-        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]], // select box
+        "lengthMenu": [[5,10, 25, 50, -1], [5,10, 25, 50, "All"]], // select box
         ajax:{
             url :  baseUrl+"cia_lib/cia_datatable",
             type : "POST",

@@ -395,20 +395,44 @@ public function cia_dependency_by_one_to_many_to_one()
         }
         $find_sql_str = implode(' OR ', $find_str_arr);
 
-        // getting total number records without any search
-        $query = $this->db->query("SELECT $presentable_cols_str FROM $table")->num_rows();
-
+        // total number records
+        $total_records = $this->db->query("SELECT $presentable_cols_str FROM $table")->num_rows();
         // total number of records
-        $totalData = $query;
+        $totalData = $total_records;
 
-        // default total number of filtered records
-        $totalFiltered = $totalData;
+        // default total number of filtered records for pagination
+        $totalFiltered = $total_records;
 
 
-        if (!empty($requestData['search']['value']))
+        /*
+         * Oracle Version
+         */
+        /*
+        $query = $this->db->query("
+            SELECT * FROM (SELECT $presentable_cols_str, ROWNUM RN
+                        FROM $table
+                        ORDER BY $sortable_col $dir) k
+            WHERE RN BETWEEN $start and $limit
+        ")->result();
+        */
+
+        /*
+         * MySql Version
+         */
+        // by default find records depending on limit
+        $query = $this->db->query("
+                SELECT $presentable_cols_str
+                FROM $table
+                ORDER BY $sortable_col $dir
+                LIMIT $start, $limit
+            ")->result();
+
+        // if there is a search parameter
+        if (!empty($search))
         {
-            // if there is a search parameter
-            //Oracle version
+            /**
+             * Oracle version
+             */
             /*$query = $this->db->query("
                 SELECT * FROM (SELECT $presentable_cols_str, ROWNUM RN 
                             FROM $table
@@ -417,7 +441,10 @@ public function cia_dependency_by_one_to_many_to_one()
                 WHERE RN BETWEEN $start and $limit
             ")->result();*/
 
-            //MySql Version
+            /**
+             * MySql Version
+             */
+            // find records depending on limit
             $query = $this->db->query("
                 SELECT $presentable_cols_str 
                 FROM $table
@@ -425,30 +452,16 @@ public function cia_dependency_by_one_to_many_to_one()
                 ORDER BY $sortable_col $dir
                 LIMIT $start, $limit
             ")->result();
-            // total filtered records
-            $totalFiltered = $query;
-            /*$query = $this->db->query("SELECT ROLL_NO, FULL_NAME_EN, DEPARTMENT FROM students_info WHERE ROLL_NO LIKE '" . $requestData['search']['value'] . "%' OR FULL_NAME_EN LIKE '" . $requestData['search']['value'] . "%' OR DEPARTMENT LIKE '" . $requestData['search']['value'] . "%' ORDER BY " . $sortable_cols[$requestData['order'][0]['column']] . "   " . $requestData['order'][0]['dir'] . "  LIMIT " . $requestData['start'] . " ," . $requestData['length'] . " ")->result();*/
-        }
-        else
-        {
-            // this is optional we have declared above you can call that
-            //ORDER BY " . $sortable_cols[$requestData['order'][0]['column']] . "   " . $requestData['order'][0]['dir'] . " LIMIT " . $requestData['start'] . " ," . $requestData['length']
-            //Oracle Version
-            /*$query = $this->db->query("
-                SELECT * FROM (SELECT $presentable_cols_str, ROWNUM RN 
-                            FROM $table
-                            ORDER BY $sortable_col $dir) k 
-                WHERE RN BETWEEN $start and $limit
-            ")->result();*/
 
-            //MySql Version
-            $query = $this->db->query("
-                SELECT $presentable_cols_str
+            // total filtered records for pagination
+            $totalFiltered = $this->db->query("
+                SELECT $presentable_cols_str 
                 FROM $table
+                WHERE $find_sql_str
                 ORDER BY $sortable_col $dir
-                LIMIT $start, $limit
-            ")->result();
+            ")->num_rows();
         }
+
 
         // loop for presentable columns records
         $data = array();
@@ -456,12 +469,10 @@ public function cia_dependency_by_one_to_many_to_one()
         {
             // preparing a record
             $nestedData = array();
-
             foreach ($presentable_cols as $presentable_col)
             {
                 $nestedData[] = $row->$presentable_col;
             }
-
             // all records
             $data[] = $nestedData;
         }
@@ -473,7 +484,6 @@ public function cia_dependency_by_one_to_many_to_one()
             "recordsFiltered" => intval($totalFiltered),
             // total number of records after searching, if there is no searching then totalFiltered = totalData
             "data" => $data
-
         );
 
         echo json_encode($json_data);
